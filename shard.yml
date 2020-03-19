@@ -1,0 +1,26 @@
+name: teamleadapi
+version: 0.1.0
+
+authors:
+  - Grabli66 <grabli66@gmail.com>
+
+description: |
+  API for TeamLead app
+
+dependencies:
+  orion:
+    github: obsidian/orion
+  water:
+    github: shootingfly/water
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+
+targets:
+  teamleadweb:
+    main: src/teamleadapi.cr
+
+# development_dependencies:
+#   webmock:
+#     github: manastech/webmock.cr
+
+# license: MIT
