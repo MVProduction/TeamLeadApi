@@ -36,6 +36,11 @@ class PostDao < BaseDao
             FROM posts
             WHERE post_id=?", id, as: DBPost)        
     end
+
+    # Возвращает срез объявлений
+    def getPostRange(firstId : Int64, count : Int32) : Array(DBPost)?
+        nil
+    end
     
     # Создаёт новый пост и возвращает идентификатор 
     def createPost(
