@@ -8,10 +8,8 @@ description: |
   API for TeamLead app
 
 dependencies:
-  orion:
-    github: obsidian/orion
-  water:
-    github: shootingfly/water
+  kemal:
+    github: kemalcr/kemal
   sqlite3:
     github: crystal-lang/crystal-sqlite3
 

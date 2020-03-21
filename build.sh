@@ -1,0 +1,1 @@
+crystal build ./src/teamleadapi.cr -o ./bin/teamleadapi

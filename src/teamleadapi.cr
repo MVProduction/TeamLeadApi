@@ -1,5 +1,6 @@
-require "./file_api"
-require "./post_api"
-require "./user_api"
+require "kemal"
+require "./api/file_api"
+require "./api/post_api"
+require "./api/user_api"
 
-TeamLeadApi.listen(port: 8080)
+Kemal.run
