@@ -4,18 +4,15 @@ require "../database/database"
 
 # Сериализует объявление в словарь
 def postToDict(post : DBPost)
-    {
-        code: OK_CODE,
-        post: {
-            postId: post.post_id,
-            postTitle: post.post_title,
-            postText: post.post_text,
-            postDate: post.post_date,
-            userId: post.user_id,
-            viewCount: post.view_count,
-            commentCount: post.comment_count,
-            lastCommentId: post.last_comment_id
-        }
+    {      
+        postId: post.post_id,
+        postTitle: post.post_title,
+        postText: post.post_text,
+        postDate: post.post_date,
+        userId: post.user_id,
+        viewCount: post.view_count,
+        commentCount: post.comment_count,
+        lastCommentId: post.last_comment_id
     }
 end
 
@@ -31,8 +28,13 @@ end
 def postsToResponse(posts : Array(DBPost))
     {
         code: OK_CODE,
-        post: posts.map |x| postToDict(x)
+        posts: posts.map { |x| postToDict(x) }
     }.to_json
+end
+
+# Возвращает последний идентификатор объявления
+get "/posts/getLastPostId" do |env|
+
 end
 
 # Возвращает объявления по идентификатору
@@ -52,9 +54,12 @@ get "/posts/getById" do |env|
     end
 end
 
-# Возвращает срез объявлений с начального идентификатора [id]
-# В заданном количестве [count]
-# [count] ограничен максимальным количеством объявлений в одном запросе
+# Возвращает срез объявлений 
+# Обязательные параметры:
+# id - начальный идентификатор
+# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
+# Опциональные параметры:
+# 
 get "/posts/getRange/:id/:count" do |env|
     begin
         firstId = env.params.url["id"].to_i64?
@@ -64,8 +69,10 @@ get "/posts/getRange/:id/:count" do |env|
             next { code: BAD_REQUEST_ERROR }.to_json
         end
 
-        posts = Database.instance.postDao.getPostRange(firstId, count)
-        next { code: NO_DATA_ERROR }.to_json unless posts 
+        posts = Database.instance.postDao.getPostRange(firstId, count)        
+        if !posts || posts.size < 1
+            next { code: NO_DATA_ERROR }.to_json
+        end
         next postsToResponse(posts)
     rescue
         next {

@@ -34,12 +34,27 @@ class PostDao < BaseDao
                 comment_count,
                 last_comment_id
             FROM posts
-            WHERE post_id=?", id, as: DBPost)        
+            WHERE post_id=?", id, as: DBPost)
     end
 
     # Возвращает срез объявлений
     def getPostRange(firstId : Int64, count : Int32) : Array(DBPost)?
-        nil
+        rs = db.query("
+            SELECT 
+                post_id,
+                post_title,
+                post_text,
+                post_date,
+                user_id,
+                view_count,
+                comment_count,
+                last_comment_id
+            FROM posts
+            WHERE post_id<=?
+            ORDER BY post_id DESC
+            LIMIT ?", firstId, count)
+        
+        DBPost.from_rs(rs)
     end
     
     # Создаёт новый пост и возвращает идентификатор 
