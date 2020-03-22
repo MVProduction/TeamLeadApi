@@ -1,4 +1,5 @@
 require "kemal"
+require "./api_helper"
 require "../common/common_response_codes"
 require "../database/database"
 
@@ -32,7 +33,7 @@ def postsToResponse(posts : Array(DBPost)?)
             posts: posts.map { |x| postToDict(x) }
         }.to_json
     else
-        return { code: NO_DATA_ERROR }.to_json
+        return getCodeResponse(NO_DATA_ERROR)
     end    
 end
 
@@ -46,15 +47,13 @@ get "/posts/getById" do |env|
     begin
         postId = env.params.url["id"].to_i64?
             
-        next { code: BAD_REQUEST_ERROR }.to_json unless postId
+        next getCodeResponse(BAD_REQUEST_ERROR) unless postId
         post = Database.instance.postDao.getPostById(postId)
-        next { code: NO_DATA_ERROR }.to_json unless post
+        next getCodeResponse(NO_DATA_ERROR) unless post
             
         next postToResponse(post)
-    rescue
-        next {
-            code: INTERNAL_ERROR
-        }.to_json
+    rescue        
+        next getCodeResponse(INTERNAL_ERROR)
     end
 end
 
@@ -68,15 +67,13 @@ get "/posts/getRange/:id/:count" do |env|
         count = env.params.url["count"].to_i32?
 
         if (firstId.nil? || count.nil?)
-            next { code: BAD_REQUEST_ERROR }.to_json
+            next getCodeResponse(BAD_REQUEST_ERROR)
         end
 
         posts = Database.instance.postDao.getRange(firstId, count)
         next postsToResponse(posts)
     rescue
-        next {
-            code: INTERNAL_ERROR
-        }.to_json
+        next getCodeResponse(INTERNAL_ERROR)
     end
 end
 
@@ -86,14 +83,12 @@ get "/posts/getPopular/:count" do |env|
     begin
         count = env.params.url["count"].to_i32?
         
-        next { code: BAD_REQUEST_ERROR }.to_json unless count
+        next getCodeResponse(BAD_REQUEST_ERROR) unless count
 
         posts = Database.instance.postDao.getPopular(count)        
         next postsToResponse(posts)
     rescue
-        next {
-            code: INTERNAL_ERROR
-        }.to_json
+        next getCodeResponse(INTERNAL_ERROR)
     end
 end
 
@@ -102,15 +97,12 @@ end
 get "/posts/getRecent/:count" do |env|
     begin
         count = env.params.url["count"].to_i32?
-        
-        next { code: BAD_REQUEST_ERROR }.to_json unless count
+        next getCodeResponse(BAD_REQUEST_ERROR) unless count
 
         posts = Database.instance.postDao.getRecent(count)        
         next postsToResponse(posts)
     rescue
-        next {
-            code: INTERNAL_ERROR
-        }.to_json
+        next getCodeResponse(INTERNAL_ERROR)
     end
 end
 
@@ -122,7 +114,7 @@ put "/posts/create" do |env|
         userId = env.params.json["userId"]?.as?(Int64)
 
         if (postTitle.nil? || postText.nil? || userId.nil?)
-            next { code: BAD_REQUEST_ERROR }.to_json
+            next getCodeResponse(BAD_REQUEST_ERROR)
         end
 
         id = Database.instance.postDao.createPost(
@@ -132,8 +124,6 @@ put "/posts/create" do |env|
             postId: id
         }.to_json
     rescue
-        next {
-            code: INTERNAL_ERROR
-        }.to_json
+        next getCodeResponse(INTERNAL_ERROR)
     end
 end
