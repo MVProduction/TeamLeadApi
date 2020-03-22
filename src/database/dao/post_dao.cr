@@ -38,7 +38,7 @@ class PostDao < BaseDao
     end
 
     # Возвращает срез объявлений
-    def getPostRange(firstId : Int64, count : Int32) : Array(DBPost)?
+    def getRange(firstId : Int64, count : Int32) : Array(DBPost)?
         rs = db.query("
             SELECT 
                 post_id,
@@ -53,6 +53,44 @@ class PostDao < BaseDao
             WHERE post_id<=?
             ORDER BY post_id DESC
             LIMIT ?", firstId, count)
+        
+        DBPost.from_rs(rs)
+    end
+
+    # Возвращает популярные посты в количестве count
+    def getPopular(count : Int32) : Array(DBPost)?
+        rs = db.query("
+            SELECT 
+                post_id,
+                post_title,
+                post_text,
+                post_date,
+                user_id,
+                view_count,
+                comment_count,
+                last_comment_id
+            FROM posts            
+            ORDER BY view_count, post_id DESC
+            LIMIT ?", count)
+        
+        DBPost.from_rs(rs)
+    end
+
+    # Возвращает самые новые объявления в количестве сount
+    def getRecent(count : Int32) : Array(DBPost)?
+        rs = db.query("
+            SELECT 
+                post_id,
+                post_title,
+                post_text,
+                post_date,
+                user_id,
+                view_count,
+                comment_count,
+                last_comment_id
+            FROM posts
+            ORDER BY post_id DESC
+            LIMIT ?", count)
         
         DBPost.from_rs(rs)
     end

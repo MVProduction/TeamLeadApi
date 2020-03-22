@@ -25,11 +25,15 @@ def postToResponse(post : DBPost)
 end
 
 # Сериализует объявления в json и добавляет код ответа
-def postsToResponse(posts : Array(DBPost))
-    {
-        code: OK_CODE,
-        posts: posts.map { |x| postToDict(x) }
-    }.to_json
+def postsToResponse(posts : Array(DBPost)?)
+    if posts && posts.size > 0
+        return {
+            code: OK_CODE,
+            posts: posts.map { |x| postToDict(x) }
+        }.to_json
+    else
+        return { code: NO_DATA_ERROR }.to_json
+    end    
 end
 
 # Возвращает последний идентификатор объявления
@@ -57,9 +61,7 @@ end
 # Возвращает срез объявлений 
 # Обязательные параметры:
 # id - начальный идентификатор
-# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
-# Опциональные параметры:
-# 
+# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе 
 get "/posts/getRange/:id/:count" do |env|
     begin
         firstId = env.params.url["id"].to_i64?
@@ -69,10 +71,41 @@ get "/posts/getRange/:id/:count" do |env|
             next { code: BAD_REQUEST_ERROR }.to_json
         end
 
-        posts = Database.instance.postDao.getPostRange(firstId, count)        
-        if !posts || posts.size < 1
-            next { code: NO_DATA_ERROR }.to_json
-        end
+        posts = Database.instance.postDao.getRange(firstId, count)
+        next postsToResponse(posts)
+    rescue
+        next {
+            code: INTERNAL_ERROR
+        }.to_json
+    end
+end
+
+# Возвращает самые популярные объявления
+# count - максимальное количество, ограничено максимальным количеством
+get "/posts/getPopular/:count" do |env|
+    begin
+        count = env.params.url["count"].to_i32?
+        
+        next { code: BAD_REQUEST_ERROR }.to_json unless count
+
+        posts = Database.instance.postDao.getPopular(count)        
+        next postsToResponse(posts)
+    rescue
+        next {
+            code: INTERNAL_ERROR
+        }.to_json
+    end
+end
+
+# Возвращает самые новые объявления
+# count - максимальное количество, ограничено максимальным количеством
+get "/posts/getRecent/:count" do |env|
+    begin
+        count = env.params.url["count"].to_i32?
+        
+        next { code: BAD_REQUEST_ERROR }.to_json unless count
+
+        posts = Database.instance.postDao.getRecent(count)        
         next postsToResponse(posts)
     rescue
         next {
