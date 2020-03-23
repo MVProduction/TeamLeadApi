@@ -84,13 +84,17 @@ end
 
 # Возвращает самые популярные объявления
 # count - максимальное количество, ограничено максимальным количеством
+# Опциональные параметры:
+# textLen - длина текста объявления в ответном сообщении
 get "/posts/getPopular/:count" do |env|
     begin
         count = env.params.url["count"].to_i32?
         
         next getCodeResponse(BAD_REQUEST_ERROR) unless count
 
-        posts = Database.instance.postDao.getPopular(count)        
+        textLen = env.params.query["textLen"]?.try &.to_i32?
+
+        posts = Database.instance.postDao.getPopular(count, textLen)        
         next postsToResponse(posts)
     rescue
         next getCodeResponse(INTERNAL_ERROR)
@@ -104,7 +108,9 @@ get "/posts/getRecent/:count" do |env|
         count = env.params.url["count"].to_i32?
         next getCodeResponse(BAD_REQUEST_ERROR) unless count
 
-        posts = Database.instance.postDao.getRecent(count)        
+        textLen = env.params.query["textLen"]?.try &.to_i32?
+
+        posts = Database.instance.postDao.getRecent(count, textLen)        
         next postsToResponse(posts)
     rescue
         next getCodeResponse(INTERNAL_ERROR)

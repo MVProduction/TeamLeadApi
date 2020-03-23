@@ -60,12 +60,14 @@ class PostDao < BaseDao
     end
 
     # Возвращает популярные посты в количестве count
-    def getPopular(count : Int32) : Array(DBPost)?
+    def getPopular(count : Int32, textLen : Int32?) : Array(DBPost)?
+        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+
         rs = db.query("
             SELECT 
                 post_id,
                 post_title,
-                post_text,
+                #{postText},
                 post_date,
                 user_id,
                 view_count,
@@ -79,12 +81,14 @@ class PostDao < BaseDao
     end
 
     # Возвращает самые новые объявления в количестве сount
-    def getRecent(count : Int32) : Array(DBPost)?
+    def getRecent(count : Int32, textLen : Int32?) : Array(DBPost)?
+        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+
         rs = db.query("
             SELECT 
                 post_id,
                 post_title,
-                post_text,
+                #{postText},
                 post_date,
                 user_id,
                 view_count,
