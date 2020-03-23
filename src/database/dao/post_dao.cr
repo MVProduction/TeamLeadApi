@@ -38,12 +38,14 @@ class PostDao < BaseDao
     end
 
     # Возвращает срез объявлений
-    def getRange(firstId : Int64, count : Int32) : Array(DBPost)?
+    def getRange(firstId : Int64, count : Int32, textLen : Int32?) : Array(DBPost)?
+        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+
         rs = db.query("
             SELECT 
                 post_id,
                 post_title,
-                post_text,
+                #{postText},
                 post_date,
                 user_id,
                 view_count,

@@ -8,7 +8,7 @@ def postToDict(post : DBPost)
     {      
         postId: post.post_id,
         postTitle: post.post_title,
-        postText: post.post_text,
+        postText:  post.post_text,
         postDate: post.post_date,
         userId: post.user_id,
         viewCount: post.view_count,
@@ -60,19 +60,24 @@ end
 # Возвращает срез объявлений 
 # Обязательные параметры:
 # id - начальный идентификатор
-# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе 
+# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
+# Опциональные параметры:
+# textLen - длина текста объявления в ответном сообщении
 get "/posts/getRange/:id/:count" do |env|
-    begin
+    begin        
         firstId = env.params.url["id"].to_i64?
         count = env.params.url["count"].to_i32?
-
+        
         if (firstId.nil? || count.nil?)
             next getCodeResponse(BAD_REQUEST_ERROR)
         end
 
-        posts = Database.instance.postDao.getRange(firstId, count)
+        textLen = env.params.query["textLen"]?.try &.to_i32?
+                
+        posts = Database.instance.postDao.getRange(firstId, count, textLen)        
         next postsToResponse(posts)
-    rescue
+    rescue e
+        p e
         next getCodeResponse(INTERNAL_ERROR)
     end
 end
