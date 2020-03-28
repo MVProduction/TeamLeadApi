@@ -1,3 +1,4 @@
+require "./dao/file_dao"
 require "./dao/post_dao"
 require "./entity/db_file_meta"
 
@@ -8,6 +9,9 @@ class Database
 
     # Для доступа к базе
     @context : DB::Database
+
+    # Для доступа к файлам
+    getter fileDao : FileDao
 
     # Для доступа к объявлениям пользователей
     getter postDao : PostDao
@@ -34,9 +38,10 @@ class Database
 
     # Конструктор
     def initialize
-        @context = DB.open "sqlite3://./teamlead.db"        
+        @context = DB.open "sqlite3://./teamlead.db"
+        @fileDao = FileDao.new(@context)
         @postDao = PostDao.new(@context)
-
+        
         initDatabase
     end    
 end
