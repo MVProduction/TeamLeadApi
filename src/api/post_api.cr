@@ -43,7 +43,7 @@ get "/posts/getLastPostId" do |env|
 end
 
 # Возвращает объявления по идентификатору
-get "/posts/getById" do |env|
+get "/posts/getById/:id" do |env|
     begin
         postId = env.params.url["id"].to_i64?
             

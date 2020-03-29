@@ -21,7 +21,7 @@ get "/files/:id" do |env|
         end
     
         env.response.content_type = meta.fileMime
-
+        
         File.open(filePath, "r") do |f|
             IO.copy(f, env.response)
         end 
