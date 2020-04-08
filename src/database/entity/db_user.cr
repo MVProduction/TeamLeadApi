@@ -1,11 +1,13 @@
 require "db"
 
 # Информация пользователя в базе данных
-class DBPost
+class DBUser
     DB.mapping({
         # Идентификатор пользователя
         user_id: Int64,
         # Электронная почта пользователя
-        email: String
+        email: String,
+        # Пароль пользователя
+        password: String
     })
 end

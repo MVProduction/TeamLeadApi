@@ -1,5 +1,6 @@
 require "./dao/file_dao"
 require "./dao/post_dao"
+require "./dao/user_dao"
 require "./entity/db_file_meta"
 
 # Для работы с базой API
@@ -13,8 +14,11 @@ class Database
     # Для доступа к файлам
     getter fileDao : FileDao
 
-    # Для доступа к объявлениям пользователей
+    # Для работы с объявлениям/проектами пользователей
     getter postDao : PostDao
+
+    # Для работы с пользователями
+    getter userDao : UserDao
 
     # Возвращает экземпляр
     def self.instance
@@ -34,6 +38,7 @@ class Database
             ") 
         
         @postDao.initTable
+        @userDao.initTable
     end
 
     # Конструктор
@@ -41,6 +46,7 @@ class Database
         @context = DB.open "sqlite3://./teamlead.db"
         @fileDao = FileDao.new(@context)
         @postDao = PostDao.new(@context)
+        @userDao = UserDao.new(@context)
         
         initDatabase
     end    
