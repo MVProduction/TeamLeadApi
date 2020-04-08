@@ -12,13 +12,33 @@ class SessionManager
         @@instance
     end
 
+    # Конструктор
+    def initialize
+        spawn do
+            loop do
+                sleep(5)
+                
+                now = Time.utc
+
+                @sessions.delete_if { |k, session|
+                    res = session.expireDate < now
+                    p "Session #{session.sessionId} expired" if res
+                    res
+                }
+            end            
+        end
+    end
+
     # Возвращает готовую сессию или создаёт новую 
     # Для поиска используется уникальный идентификатор пользователя
     def getOrCreateSession(userId : Int64) : Session
         session = @sessions[userId]?
-        return session if session
+        if session
+            session.makeLive
+            return session
+        end
 
-        session = Session.new(userId)
+        session = Session.new(userId)        
         @sessions[userId] = session
         return session
     end
