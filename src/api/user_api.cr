@@ -28,7 +28,7 @@ post "/user/mailLogin" do |env|
         # Отправляет идентификатор сессии
         next {
             code: OK_CODE,
-            session: session.sessionId
+            sessionId: session.sessionId
         }.to_json
     else
         next getCodeResponse(INVALID_LOGIN_OR_PASSWORD)
