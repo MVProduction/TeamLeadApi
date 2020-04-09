@@ -14,6 +14,12 @@ class UserDao < BaseDao
                     password VARCHAR(255)
                 )
             ")
+        
+        # Создаёт индекс по email
+        db.exec("
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email 
+            ON users (email);
+        ")
     end
 
     # Возвращает пользователя по электронной почте
@@ -25,5 +31,16 @@ class UserDao < BaseDao
                 password                
             FROM users
             WHERE email=?", email, as: DBUser)
+    end
+
+    # Создаёт нового пользователя
+    # Возвращает идентификатор пользователя
+    def createUser(login : String, password : String) : Int64
+        rs = db.exec("
+            INSERT INTO users(email,password)
+            VALUES(?,?)
+        ")
+
+        return rs.last_insert_id
     end
 end

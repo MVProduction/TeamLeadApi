@@ -4,23 +4,23 @@ shards:
     github: crystal-lang/crystal-db
     version: 0.8.0
 
-  inflector:
-    github: phoffer/inflector.cr
-    version: 0.1.8
+  exception_page:
+    github: crystal-loot/exception_page
+    version: 0.1.4
 
-  oak:
-    github: obsidian/oak
-    version: 2.0.1
+  kemal:
+    github: kemalcr/kemal
+    version: 0.26.1
 
-  orion:
-    github: obsidian/orion
-    version: 2.3.2
+  kilt:
+    github: jeromegn/kilt
+    version: 0.4.0
+
+  radix:
+    github: luislavena/radix
+    version: 0.3.9
 
   sqlite3:
     github: crystal-lang/crystal-sqlite3
     version: 0.15.0
-
-  water:
-    github: shootingfly/water
-    version: 0.1.0
 

@@ -1,5 +1,8 @@
 # Управляет сессиями
 class SessionManager
+    # Время проверки в секундах
+    CHECK_TIME_SECONDS = 60 * 10
+
     # Экземпляр
     @@instance = SessionManager.new
     
@@ -16,7 +19,7 @@ class SessionManager
     def initialize
         spawn do
             loop do
-                sleep(5)
+                sleep(CHECK_TIME_SECONDS)
                 
                 now = Time.utc
 
