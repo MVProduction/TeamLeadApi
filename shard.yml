@@ -12,6 +12,8 @@ dependencies:
     github: kemalcr/kemal
   sqlite3:
     github: crystal-lang/crystal-sqlite3
+  email:
+    github: arcage/crystal-email
 
 targets:
   teamleadweb:

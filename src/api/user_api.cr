@@ -5,6 +5,7 @@ require "../common/session/session_manager"
 require "../common/session/session"
 require "../common/register/register_link"
 require "../common/register/register_manager"
+require "../common/mail/mail_manager"
 
 # Ошибка - неправильный логин или пароль
 INVALID_LOGIN_OR_PASSWORD = 3000
@@ -44,8 +45,8 @@ post "/user/mailLogin" do |env|
     end
 end
 
-# Регистрирует нового пользователя используя почту и пароль
-# Возвращает код ответа
+# Создаёт ссылку на регистрацию
+# Отправляет её по почте
 post "/user/mailRegister" do |env|
     begin
         login = env.params.json["login"]?.as?(String)
@@ -62,7 +63,21 @@ post "/user/mailRegister" do |env|
         # Создаёт ссылку на подтверждение регистрации
         link = RegisterLinkManager.instance.createLink()
 
+        subject = "TeamLead - регистрация аккаунта"
+        message = <<-MAIL
+            Здравствуйте, дорогой пользователь!
+
+            Для продолжения регистрации перейдите по ссылке:
+            #{link.linkUrl}
+
+            Это письмо сформировано автоматически. Пожалуйста, не отвечайте на него.
+
+            --
+            С уважением, комманда TeamLead.
+        MAIL
+
         # Отправляет на электронную почту письмо с подтверждением регистрации
+        MailManager.instance.sendMail(subject, message, login)
 
         next getCodeResponse(OK_CODE)
     rescue
