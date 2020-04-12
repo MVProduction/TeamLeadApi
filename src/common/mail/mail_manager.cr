@@ -25,23 +25,18 @@ class MailManager
     # Отправляет почту
     def sendMail(subject : String, message : String, recepient : String)
         config = EMail::Client::Config.new(SMTP_HOST)
-        config.use_auth(SENDER_MAIL, PASSWORD)        
-        config.use_tls(SMTP_PORT)
+        config.use_auth(SENDER_MAIL, PASSWORD)
         config.connect_timeout = 2
 
         client = EMail::Client.new(config)
-            
-        p "START CLIENT"
-        client.start do
-            p "START SEND"
+
+        client.start do            
             mail = EMail::Message.new
             mail.from SENDER_MAIL
             mail.to recepient
             mail.subject subject
-            mail.message message
-            p "START SEND 2"
+            mail.message message        
             send(mail)
-            p "SENDED"
         end
     end
 end

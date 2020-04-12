@@ -1,18 +1,18 @@
 require "uuid"
 
-require "./register_link"
+require "./register_ticket"
 
 # Менеджер регистрации пользователя
-# Управляет ссылками на регистрацию
-class RegisterLinkManager
+# Управляет заявками на регистрацию
+class RegisterTicketManager
     # Время проверки в секундах
     CHECK_TIME_SECONDS = 60 * 5
 
     # Экземпляр
-    @@instance = RegisterLinkManager.new
+    @@instance = RegisterTicketManager.new
 
-    # Ссылки
-    @links = Hash(String, RegisterLink).new
+    # Заявки
+    @tickets = Hash(String, RegisterTicket).new
 
     # Возвращает экземпляр
     def self.instance
@@ -27,19 +27,29 @@ class RegisterLinkManager
 
                 now = Time.utc
 
-                @links.delete_if { |k, link|
+                @tickets.delete_if { |k, link|
                     res = link.expireDate < now
-                    p "Register link #{link.linkId} expired" if res
+                    p "Register link #{link.ticketId} expired" if res
                     res
                 }
             end
         end
     end
 
-    # Создаёт ссылку
-    def createLink() : RegisterLink                
-        link = RegisterLink.new
-        @links[link.linkId] = link
-        return link
+    # Создаёт заявку
+    def createTicket(login : String, password : String) : RegisterTicket
+        ticket = RegisterTicket.new(login, password)
+        @tickets[ticket.ticketId] = ticket
+        return ticket
+    end
+
+    # Получает заявку по идентификатору
+    def getTicketById(ticketId : String) : RegisterTicket?
+        return @tickets[ticketId]?
+    end
+
+    # Удаляет заявку
+    def removeTicket(ticket : RegisterTicket)
+        @tickets.delete(ticket.ticketId)
     end
 end

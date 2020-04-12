@@ -1,9 +1,10 @@
 require "../database/database"
 require "./api_helper"
+require "../common/common_constants"
 require "../common/common_response_codes"
 require "../common/session/session_manager"
 require "../common/session/session"
-require "../common/register/register_link"
+require "../common/register/register_ticket"
 require "../common/register/register_manager"
 require "../common/mail/mail_manager"
 
@@ -13,10 +14,13 @@ INVALID_LOGIN_OR_PASSWORD = 3000
 # Ошибка - пользователь уже существует
 USER_ALREADY_EXISTS = 3001
 
+# Заявка на регистрацию не найдена
+REGISTER_TICKET_NOT_FOUND_ERROR = 3002
+
 # Проводит аутентификацию по электронной почте и паролю
 # Возвращает либо идентификатор сессии
 # Или код ошибки
-post "/user/mailLogin" do |env|
+post "/user/loginByMail" do |env|
     begin
         login = env.params.json["login"]?.as?(String)
         password = env.params.json["password"]?.as?(String)
@@ -47,7 +51,50 @@ end
 
 # Создаёт ссылку на регистрацию
 # Отправляет её по почте
-post "/user/mailRegister" do |env|
+# post "/user/mailRegister" do |env|
+#     begin
+#         login = env.params.json["login"]?.as?(String)
+#         password = env.params.json["password"]?.as?(String)
+
+#         if login.nil? || password.nil?
+#             next getCodeResponse(BAD_REQUEST_ERROR)
+#         end
+
+#         # Проверяет нет ли уже такого пользователя
+#         user = Database.instance.userDao.getUserByEmail(login)
+#         next getCodeResponse(USER_ALREADY_EXISTS) if user
+
+#         # Создаёт ссылку на подтверждение регистрации
+#         link = RegisterLinkManager.instance.createLink(login, password)
+#         linkUrl = "http://#{HOST_NAME}:#{HOST_PORT}/user/registerMailСonfirm/#{link.linkId}"
+
+#         # TODO: интернализация
+#         subject = "TeamLead - регистрация аккаунта"
+#         message = <<-MAIL
+#             Здравствуйте, дорогой пользователь!
+
+#             Для продолжения регистрации перейдите по ссылке:
+#             #{link.linkUrl}
+
+#             Это письмо сформировано автоматически. Пожалуйста, не отвечайте на него.
+
+#             --
+#             С уважением, комманда TeamLead.
+#         MAIL
+
+#         # Отправляет на электронную почту письмо с подтверждением регистрации
+#         MailManager.instance.sendMail(subject, message, login)
+
+#         next getCodeResponse(OK_CODE)
+#     rescue
+#         next getCodeResponse(INTERNAL_ERROR)
+#     end
+# end
+
+# Создаёт заявку на регистрацию
+# В заявку помещает логин и пароль пользователя
+# Возвращает идентификатор заявки
+post "/user/createRegisterTicket" do |env|
     begin
         login = env.params.json["login"]?.as?(String)
         password = env.params.json["password"]?.as?(String)
@@ -61,26 +108,30 @@ post "/user/mailRegister" do |env|
         next getCodeResponse(USER_ALREADY_EXISTS) if user
 
         # Создаёт ссылку на подтверждение регистрации
-        link = RegisterLinkManager.instance.createLink()
+        ticket = RegisterTicketManager.instance.createTicket(login, password)
 
-        subject = "TeamLead - регистрация аккаунта"
-        message = <<-MAIL
-            Здравствуйте, дорогой пользователь!
-
-            Для продолжения регистрации перейдите по ссылке:
-            #{link.linkUrl}
-
-            Это письмо сформировано автоматически. Пожалуйста, не отвечайте на него.
-
-            --
-            С уважением, комманда TeamLead.
-        MAIL
-
-        # Отправляет на электронную почту письмо с подтверждением регистрации
-        MailManager.instance.sendMail(subject, message, login)
-
-        next getCodeResponse(OK_CODE)
+        next {
+            code: OK_CODE,
+            ticketId: ticket.ticketId
+        }.to_json
     rescue
         next getCodeResponse(INTERNAL_ERROR)
+    end
+end
+
+# Подтверждает создание пользователя по электронной почте
+get "/user/confirmRegisterTicket/:id" do |env|
+    begin
+        ticketId = env.params.url["id"]
+        ticket = RegisterTicketManager.instance.getTicketById(ticketId)
+        if (ticket)
+            Database.instance.userDao.createUser(ticket.login, ticket.password)
+            RegisterTicketManager.instance.removeTicket(ticket)
+            next getCodeResponse(OK_CODE)
+        end
+
+        next getCodeResponse(REGISTER_TICKET_NOT_FOUND_ERROR)
+    rescue
+        next getCodeResponse(OK_CODE)
     end
 end
