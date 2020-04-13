@@ -49,48 +49,6 @@ post "/user/loginByMail" do |env|
     end
 end
 
-# Создаёт ссылку на регистрацию
-# Отправляет её по почте
-# post "/user/mailRegister" do |env|
-#     begin
-#         login = env.params.json["login"]?.as?(String)
-#         password = env.params.json["password"]?.as?(String)
-
-#         if login.nil? || password.nil?
-#             next getCodeResponse(BAD_REQUEST_ERROR)
-#         end
-
-#         # Проверяет нет ли уже такого пользователя
-#         user = Database.instance.userDao.getUserByEmail(login)
-#         next getCodeResponse(USER_ALREADY_EXISTS) if user
-
-#         # Создаёт ссылку на подтверждение регистрации
-#         link = RegisterLinkManager.instance.createLink(login, password)
-#         linkUrl = "http://#{HOST_NAME}:#{HOST_PORT}/user/registerMailСonfirm/#{link.linkId}"
-
-#         # TODO: интернализация
-#         subject = "TeamLead - регистрация аккаунта"
-#         message = <<-MAIL
-#             Здравствуйте, дорогой пользователь!
-
-#             Для продолжения регистрации перейдите по ссылке:
-#             #{link.linkUrl}
-
-#             Это письмо сформировано автоматически. Пожалуйста, не отвечайте на него.
-
-#             --
-#             С уважением, комманда TeamLead.
-#         MAIL
-
-#         # Отправляет на электронную почту письмо с подтверждением регистрации
-#         MailManager.instance.sendMail(subject, message, login)
-
-#         next getCodeResponse(OK_CODE)
-#     rescue
-#         next getCodeResponse(INTERNAL_ERROR)
-#     end
-# end
-
 # Создаёт заявку на регистрацию
 # В заявку помещает логин и пароль пользователя
 # Возвращает идентификатор заявки
