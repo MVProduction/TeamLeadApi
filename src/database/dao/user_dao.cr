@@ -39,7 +39,7 @@ class UserDao < BaseDao
         rs = db.exec("
             INSERT INTO users(email,password)
             VALUES(?,?)
-        ")
+        ", login, password)
 
         return rs.last_insert_id
     end

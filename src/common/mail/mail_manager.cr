@@ -24,7 +24,7 @@ class MailManager
 
     # Отправляет почту
     def sendMail(subject : String, message : String, recepient : String)
-        config = EMail::Client::Config.new(SMTP_HOST)
+        config = EMail::Client::Config.new(SMTP_HOST, SMTP_PORT)
         config.use_auth(SENDER_MAIL, PASSWORD)
         config.connect_timeout = 2
 
