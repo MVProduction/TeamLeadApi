@@ -59,13 +59,13 @@ end
 
 # Возвращает срез объявлений 
 # Обязательные параметры:
-# id - начальный идентификатор
-# deep - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
+# firstId - начальный идентификатор
+# count - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
 # Опциональные параметры:
 # textLen - длина текста объявления в ответном сообщении
-get "/posts/getRange/:id/:count" do |env|
+get "/posts/getRange/:firstId/:count" do |env|
     begin        
-        firstId = env.params.url["id"].to_i64?
+        firstId = env.params.url["firstId"].to_i64?
         count = env.params.url["count"].to_i32?
         
         if (firstId.nil? || count.nil?)
@@ -105,7 +105,7 @@ end
 # count - максимальное количество, ограничено максимальным количеством
 get "/posts/getRecent/:count" do |env|
     begin
-        count = env.params.url["count"].to_i32?
+        count = env.params.url["count"].to_i32?        
         next getCodeResponse(BAD_REQUEST_ERROR) unless count
 
         textLen = env.params.query["textLen"]?.try &.to_i32?
