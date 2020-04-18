@@ -37,6 +37,19 @@ def postsToResponse(posts : Array(DBPost)?)
     end    
 end
 
+# Возвращает количество объявлений
+get "/posts/getPostCount" do |env|
+    begin
+        postCount = Database.instance.postDao.getPostCount
+        next {
+            code: OK_CODE,
+            postCount: postCount
+        }.to_json
+    rescue
+        next getCodeResponse(INTERNAL_ERROR)
+    end
+end
+
 # Возвращает последний идентификатор объявления
 get "/posts/getLastPostId" do |env|
     begin

@@ -37,6 +37,11 @@ class PostDao < BaseDao
         return lastPostId
     end
 
+    # Возвращает количество объявлений
+    def getPostCount() : Int64
+        @postCount
+    end
+
     # Возвращает объявление по идентификатору
     def getPostById(id : Int) : DBPost?
         return db.query_one?("
