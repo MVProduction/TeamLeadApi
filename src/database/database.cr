@@ -37,8 +37,9 @@ class Database
                 )
             ") 
         
-        @postDao.initTable
-        @userDao.initTable
+        @fileDao.init
+        @postDao.init
+        @userDao.init
     end
 
     # Конструктор

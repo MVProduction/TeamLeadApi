@@ -3,7 +3,7 @@ require "./base_dao"
 # Для доступа к файлам
 class FileDao < BaseDao
     # Инициализирует таблицу
-    def initTable   
+    def init   
         # Создаёт таблицу для объявлений пользователя
         db.exec(
             "CREATE TABLE IF NOT EXISTS files

@@ -7,5 +7,6 @@ abstract class BaseDao
     def initialize(@db)
     end
 
-    abstract def initTable
+    # Инициализирует: создаёт таблицу и т.д.
+    abstract def init
 end

@@ -39,7 +39,16 @@ end
 
 # Возвращает последний идентификатор объявления
 get "/posts/getLastPostId" do |env|
+    begin
+        lastPostId = Database.instance.postDao.getLastPostId
 
+        next {
+            code: OK_CODE,
+            lastPostId: lastPostId
+        }.to_json
+    rescue
+        next getCodeResponse(INTERNAL_ERROR)
+    end
 end
 
 # Возвращает объявления по идентификатору
@@ -80,6 +89,16 @@ get "/posts/getRange/:firstId/:count" do |env|
         p e
         next getCodeResponse(INTERNAL_ERROR)
     end
+end
+
+# Возвращает объявления разбивая их на страницы
+# Обязательные параметры
+# pageIndex - номер страницы
+# pageSize - размер страницы
+# Опциональные параметры:
+# textLen - длина текста объявления в ответном сообщении
+get "/posts/getByPage/:pageIndex/:pageSize" do |env|
+
 end
 
 # Возвращает самые популярные объявления

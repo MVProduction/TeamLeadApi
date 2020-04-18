@@ -4,7 +4,7 @@ require "../entity/db_user"
 # Для доступа к пользователям
 class UserDao < BaseDao
     # Инициализирует таблицу
-    def initTable
+    def init
         # Создаёт таблицу для объявлений пользователя
         db.exec(
             "CREATE TABLE IF NOT EXISTS users

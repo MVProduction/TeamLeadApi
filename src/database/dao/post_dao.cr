@@ -3,8 +3,11 @@ require "../entity/db_post"
 
 # Для доступа к объявлениям пользователя
 class PostDao < BaseDao
+    # Количество объявлений
+    @postCount : Int64 = 0
+
     # Инициализирует таблицу
-    def initTable
+    def init
         # Создаёт таблицу для объявлений пользователя
         db.exec(
             "CREATE TABLE IF NOT EXISTS posts
@@ -19,6 +22,19 @@ class PostDao < BaseDao
                     last_comment_id INTEGER DEFAULT 0
                 )
             ")
+
+            # Получает количество объявлений
+            @postCount = db.scalar("
+                SELECT count(post_id) FROM posts
+            ").as(Float64 | Int64 | String).to_i64
+    end
+
+    # Возвращает идентификатор последнего
+    def getLastPostId() : Int64
+        lastPostId = db.scalar("
+            SELECT seq FROM sqlite_sequence WHERE name='posts'"
+        ).as(Float64 | Int64 | String).to_i64
+        return lastPostId
     end
 
     # Возвращает объявление по идентификатору
@@ -113,6 +129,8 @@ class PostDao < BaseDao
             VALUES(?, ?, ?, ?)", 
             userId, postTitle, postText, date)
         
-        rs.last_insert_id
+        # Увеличивает счётчик объявлений
+        @postCount += 1
+        return rs.last_insert_id
     end
 end
