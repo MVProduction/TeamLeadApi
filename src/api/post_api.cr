@@ -26,10 +26,11 @@ def postToResponse(post : DBPost)
 end
 
 # Сериализует объявления в json и добавляет код ответа
-def postsToResponse(posts : Array(DBPost)?)
+def postsToResponse(posts : Array(DBPost)?, total : Int64? = nil)
     if posts && posts.size > 0
         return {
             code: OK_CODE,
+            total: total,
             posts: posts.map { |x| postToDict(x) }
         }.to_json
     else
@@ -37,34 +38,9 @@ def postsToResponse(posts : Array(DBPost)?)
     end    
 end
 
-# Возвращает количество объявлений
-get "/posts/getPostCount" do |env|
-    begin
-        postCount = Database.instance.postDao.getPostCount
-        next {
-            code: OK_CODE,
-            postCount: postCount
-        }.to_json
-    rescue
-        next getCodeResponse(INTERNAL_ERROR)
-    end
-end
-
-# Возвращает последний идентификатор объявления
-get "/posts/getLastPostId" do |env|
-    begin
-        lastPostId = Database.instance.postDao.getLastPostId
-
-        next {
-            code: OK_CODE,
-            lastPostId: lastPostId
-        }.to_json
-    rescue
-        next getCodeResponse(INTERNAL_ERROR)
-    end
-end
-
 # Возвращает объявления по идентификатору
+# Обязательные параметры:
+# id - идентификатор объявления
 get "/posts/getById/:id" do |env|
     begin
         postId = env.params.url["id"].to_i64?
@@ -82,69 +58,34 @@ end
 # Возвращает срез объявлений 
 # Обязательные параметры:
 # firstId - начальный идентификатор
-# count - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
 # Опциональные параметры:
+# tags - тэги по которым запрашиваются объявления
+# search - строка поиска. Поиск осуществляется по тексту
+# orderby - поле по которому нужно осуществить сортировку
+# limit - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
+# needCount - признак что нужно вернуть общее количество сообщений
 # textLen - длина текста объявления в ответном сообщении
-get "/posts/getRange/:firstId/:count" do |env|
+get "/posts/getPosts/:firstId" do |env|
     begin        
-        firstId = env.params.url["firstId"].to_i64?
-        count = env.params.url["count"].to_i32?
+        firstId = env.params.url["firstId"].to_i64?        
         
-        if (firstId.nil? || count.nil?)
+        if firstId.nil?
             next getCodeResponse(BAD_REQUEST_ERROR)
         end
+                
+        limit = env.params.query["limit"]?.try &.to_i32?
 
+        tags = env.params.query["tags"]?.try &.split(',')
+        search = env.params.query["search"]?
+        orderby = env.params.query["orderby"]?.try &.split(',')
+        needCount = env.params.query["needCount"]? == "true" ? true : false
         textLen = env.params.query["textLen"]?.try &.to_i32?
                 
-        posts = Database.instance.postDao.getRange(firstId, count, textLen)        
-        next postsToResponse(posts)
+        res = Database.instance.postDao.getPosts(
+            firstId, limit, tags, search, orderby, textLen, needCount)        
+        next postsToResponse(res[0], res[1])
     rescue e
         p e
-        next getCodeResponse(INTERNAL_ERROR)
-    end
-end
-
-# Возвращает объявления разбивая их на страницы
-# Обязательные параметры
-# pageIndex - номер страницы
-# pageSize - размер страницы
-# Опциональные параметры:
-# textLen - длина текста объявления в ответном сообщении
-get "/posts/getByPage/:pageIndex/:pageSize" do |env|
-
-end
-
-# Возвращает самые популярные объявления
-# count - максимальное количество, ограничено максимальным количеством
-# Опциональные параметры:
-# textLen - длина текста объявления в ответном сообщении
-get "/posts/getPopular/:count" do |env|
-    begin
-        count = env.params.url["count"].to_i32?
-        
-        next getCodeResponse(BAD_REQUEST_ERROR) unless count
-
-        textLen = env.params.query["textLen"]?.try &.to_i32?
-
-        posts = Database.instance.postDao.getPopular(count, textLen)        
-        next postsToResponse(posts)
-    rescue
-        next getCodeResponse(INTERNAL_ERROR)
-    end
-end
-
-# Возвращает самые новые объявления
-# count - максимальное количество, ограничено максимальным количеством
-get "/posts/getRecent/:count" do |env|
-    begin
-        count = env.params.url["count"].to_i32?        
-        next getCodeResponse(BAD_REQUEST_ERROR) unless count
-
-        textLen = env.params.query["textLen"]?.try &.to_i32?
-
-        posts = Database.instance.postDao.getRecent(count, textLen)        
-        next postsToResponse(posts)
-    rescue
         next getCodeResponse(INTERNAL_ERROR)
     end
 end

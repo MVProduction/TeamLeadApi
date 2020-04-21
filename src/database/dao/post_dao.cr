@@ -2,9 +2,9 @@ require "./base_dao"
 require "../entity/db_post"
 
 # Для доступа к объявлениям пользователя
-class PostDao < BaseDao
-    # Количество объявлений
-    @postCount : Int64 = 0
+class PostDao < BaseDao    
+    # Количество ответов по умолчанию
+    DEFAULT_POST_LIMIT = 20
 
     # Инициализирует таблицу
     def init
@@ -21,25 +21,22 @@ class PostDao < BaseDao
                     comment_count INTEGER DEFAULT 0,
                     last_comment_id INTEGER DEFAULT 0
                 )
-            ")
-
-            # Получает количество объявлений
-            @postCount = db.scalar("
-                SELECT count(post_id) FROM posts
-            ").as(Float64 | Int64 | String).to_i64
+            ")            
     end
+    
+    # Создаёт новый пост и возвращает идентификатор 
+    def createPost(
+        userId : Int64,
+        postTitle : String, 
+        postText : String) : Int64        
 
-    # Возвращает идентификатор последнего
-    def getLastPostId() : Int64
-        lastPostId = db.scalar("
-            SELECT seq FROM sqlite_sequence WHERE name='posts'"
-        ).as(Float64 | Int64 | String).to_i64
-        return lastPostId
-    end
-
-    # Возвращает количество объявлений
-    def getPostCount() : Int64
-        @postCount
+        date = Time.utc.to_unix
+        rs = db.exec("INSERT INTO posts
+            (user_id, post_title, post_text, post_date) 
+            VALUES(?, ?, ?, ?)", 
+            userId, postTitle, postText, date)
+                
+        return rs.last_insert_id
     end
 
     # Возвращает объявление по идентификатору
@@ -56,13 +53,30 @@ class PostDao < BaseDao
                 last_comment_id
             FROM posts
             WHERE post_id=?", id, as: DBPost)
-    end
+    end    
 
-    # Возвращает срез объявлений
-    def getRange(firstId : Int64, count : Int32, textLen : Int32?) : Array(DBPost)?
+    # Возвращает объявления  с заданной фильрацией
+    # postId - идентификатор объявления с которого начинается поиск
+    # limit - количество возвращаемых объявлений
+    # tags - тэги по которым нужно вернуть объявления
+    # search - строка поиска
+    # textLen - количество символов в тексте объявления
+    # orderby - название поля по которому сортируется результат
+    # needCount - признак что нужно вернуть общее количество сообщений
+    # Возвращает массив объявлений и общее количество сообщений
+    def getPosts(                        
+            postId : Int64? = nil,
+            limit : Int32? = DEFAULT_POST_LIMIT,
+            tags : Array(String)? = nil,
+            search : String? = nil,
+            orderby : Array(String)? = nil,
+            textLen : Int32? = nil,
+            needCount : Bool? = nil
+        ) : Tuple(Array(DBPost)?, Int64?)
+        
         postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
 
-        rs = db.query("
+        query = "
             SELECT 
                 post_id,
                 post_title,
@@ -71,71 +85,36 @@ class PostDao < BaseDao
                 user_id,
                 view_count,
                 comment_count,
-                last_comment_id
-            FROM posts
-            WHERE post_id<=?
-            ORDER BY post_id DESC
-            LIMIT ?", firstId, count)
-        
-        DBPost.from_rs(rs)
-    end
+                last_comment_id 
+            FROM posts 
+        "
 
-    # Возвращает популярные посты в количестве count
-    def getPopular(count : Int32, textLen : Int32?) : Array(DBPost)?
-        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+        conditions = "WHERE "
+        if postId
+            conditions += "post_id >= #{postId}"
+        end
 
-        rs = db.query("
-            SELECT 
-                post_id,
-                post_title,
-                #{postText},
-                post_date,
-                user_id,
-                view_count,
-                comment_count,
-                last_comment_id
-            FROM posts            
-            ORDER BY view_count, post_id DESC
-            LIMIT ?", count)
-        
-        DBPost.from_rs(rs)
-    end
+        if orderby
+            order = orderby.join(',')
+            # TODO настройка восходящего и нисходящего
+            conditions += " ORDER BY #{order} DESC"
+        end
 
-    # Возвращает самые новые объявления в количестве сount
-    def getRecent(count : Int32, textLen : Int32?) : Array(DBPost)?
-        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+        if limit
+            conditions += " LIMIT #{limit}"
+        end        
 
-        rs = db.query("
-            SELECT 
-                post_id,
-                post_title,
-                #{postText},
-                post_date,
-                user_id,
-                view_count,
-                comment_count,
-                last_comment_id
-            FROM posts
-            ORDER BY post_id DESC
-            LIMIT ?", count)
-        
-        DBPost.from_rs(rs)
-    end
-    
-    # Создаёт новый пост и возвращает идентификатор 
-    def createPost(
-        userId : Int64,
-        postTitle : String, 
-        postText : String) : Int64        
+        postQuery = query + conditions
+        rs = db.query(postQuery)
+        posts = DBPost.from_rs(rs)
 
-        date = Time.utc.to_unix
-        rs = db.exec("INSERT INTO posts
-            (user_id, post_title, post_text, post_date) 
-            VALUES(?, ?, ?, ?)", 
-            userId, postTitle, postText, date)
-        
-        # Увеличивает счётчик объявлений
-        @postCount += 1
-        return rs.last_insert_id
+        # Считает полное количество сообщений
+        count : Int64? 
+        if needCount
+            cquery = "SELECT count(post_id) FROM posts"
+            count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
+        end
+
+        return { posts, count }
     end
 end
