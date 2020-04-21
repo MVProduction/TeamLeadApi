@@ -91,7 +91,7 @@ class PostDao < BaseDao
 
         conditions = "WHERE "
         if postId
-            conditions += "post_id >= #{postId}"
+            conditions += "post_id <= #{postId}"
         end
 
         if orderby
