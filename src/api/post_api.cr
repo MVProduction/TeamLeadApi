@@ -57,24 +57,18 @@ end
 
 # Возвращает срез объявлений 
 # Обязательные параметры:
-# firstId - начальный идентификатор
 # Опциональные параметры:
+# firstId - начальный идентификатор
 # tags - тэги по которым запрашиваются объявления
 # search - строка поиска. Поиск осуществляется по тексту
 # orderby - поле по которому нужно осуществить сортировку
 # limit - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
 # needCount - признак что нужно вернуть общее количество сообщений
 # textLen - длина текста объявления в ответном сообщении
-get "/posts/getPosts/:firstId" do |env|
+get "/posts/getPosts" do |env|
     begin        
-        firstId = env.params.url["firstId"].to_i64?        
-        
-        if firstId.nil?
-            next getCodeResponse(BAD_REQUEST_ERROR)
-        end
-                
+        firstId = env.params.query["firstId"]?.try &.to_i64?
         limit = env.params.query["limit"]?.try &.to_i32?
-
         tags = env.params.query["tags"]?.try &.split(',')
         search = env.params.query["search"]?
         orderby = env.params.query["orderby"]?.try &.split(',')

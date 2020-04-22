@@ -66,7 +66,7 @@ class PostDao < BaseDao
     # Возвращает массив объявлений и общее количество сообщений
     def getPosts(                        
             postId : Int64? = nil,
-            limit : Int32? = DEFAULT_POST_LIMIT,
+            limit : Int32? = nil,
             tags : Array(String)? = nil,
             search : String? = nil,
             orderby : Array(String)? = nil,
@@ -88,10 +88,14 @@ class PostDao < BaseDao
                 last_comment_id 
             FROM posts 
         "
-
-        conditions = "WHERE "
-        if postId
+        
+        conditions = ""
+        if postId            
             conditions += "post_id <= #{postId}"
+        end
+
+        if !conditions.empty?
+            conditions = " WHERE " + conditions
         end
 
         if orderby
@@ -100,11 +104,12 @@ class PostDao < BaseDao
             conditions += " ORDER BY #{order} DESC"
         end
 
-        if limit
-            conditions += " LIMIT #{limit}"
-        end        
+        limit ||= DEFAULT_POST_LIMIT
+        conditions += " LIMIT #{limit}"
 
         postQuery = query + conditions
+        p postQuery
+
         rs = db.query(postQuery)
         posts = DBPost.from_rs(rs)
 
