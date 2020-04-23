@@ -55,23 +55,18 @@ class PostDao < BaseDao
             WHERE post_id=?", id, as: DBPost)
     end    
 
-    # Возвращает объявления  с заданной фильрацией
+    # Возвращает массив объявлений с заданной фильтрацией и общее количество сообщений
     # postId - идентификатор объявления с которого начинается поиск
     # limit - количество возвращаемых объявлений
     # tags - тэги по которым нужно вернуть объявления
-    # search - строка поиска
     # textLen - количество символов в тексте объявления
-    # orderby - название поля по которому сортируется результат
-    # needCount - признак что нужно вернуть общее количество сообщений
-    # Возвращает массив объявлений и общее количество сообщений
+    # orderby - название поля по которому сортируется результат    
     def getPosts(                        
             postId : Int64? = nil,
             limit : Int32? = nil,
             tags : Array(String)? = nil,
-            search : String? = nil,
             orderby : Array(String)? = nil,
-            textLen : Int32? = nil,
-            needCount : Bool? = nil
+            textLen : Int32? = nil            
         ) : Tuple(Array(DBPost)?, Int64?)
         
         postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
@@ -114,12 +109,22 @@ class PostDao < BaseDao
         posts = DBPost.from_rs(rs)
 
         # Считает полное количество сообщений
+        # TODO: оптимизация подсчёта количества
         count : Int64? 
-        if needCount
-            cquery = "SELECT count(post_id) FROM posts"
-            count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
-        end
-
+        cquery = "SELECT count(post_id) FROM posts"
+        count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
+        
         return { posts, count }
+    end
+
+    # Возвращает объявления по строке поиска
+    # search - строка поиска
+    # firstId - идентификатор объявления от которого нужно производить поиск
+    # limit - количество возвращаемых сообщений    
+    def getPostsBySearch(
+        search : String,
+        firstId : Int64? = nil,
+        limit : Int32? = nil)
+
     end
 end

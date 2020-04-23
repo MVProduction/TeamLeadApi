@@ -63,20 +63,19 @@ end
 # search - строка поиска. Поиск осуществляется по тексту
 # orderby - поле по которому нужно осуществить сортировку
 # limit - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
-# needCount - признак что нужно вернуть общее количество сообщений
 # textLen - длина текста объявления в ответном сообщении
 get "/posts/getPosts" do |env|
     begin        
+        p env.params.query
         firstId = env.params.query["firstId"]?.try &.to_i64?
         limit = env.params.query["limit"]?.try &.to_i32?
-        tags = env.params.query["tags"]?.try &.split(',')
-        search = env.params.query["search"]?
-        orderby = env.params.query["orderby"]?.try &.split(',')
-        needCount = env.params.query["needCount"]? == "true" ? true : false
+        tags = env.params.query["tags"]?.try &.split(',')        
+        orderby = env.params.query["orderby"]?.try &.split(',')        
         textLen = env.params.query["textLen"]?.try &.to_i32?
                 
+        p limit
         res = Database.instance.postDao.getPosts(
-            firstId, limit, tags, search, orderby, textLen, needCount)        
+            firstId, limit, tags, orderby, textLen)
         next postsToResponse(res[0], res[1])
     rescue e
         p e
