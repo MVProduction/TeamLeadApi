@@ -28,11 +28,14 @@ end
 # Сериализует объявления в json и добавляет код ответа
 def postsToResponse(posts : Array(DBPost)?, total : Int64? = nil)
     if posts && posts.size > 0
-        return {
-            code: OK_CODE,
-            total: total,
-            posts: posts.map { |x| postToDict(x) }
-        }.to_json
+        dict = {
+            "code" => OK_CODE,
+            "posts" => posts.map { |x| postToDict(x) }
+        }
+        
+        dict["total"] = total if total
+
+        return dict.to_json
     else
         return getCodeResponse(NO_DATA_ERROR)
     end    
@@ -55,8 +58,7 @@ get "/posts/getById/:id" do |env|
     end
 end
 
-# Возвращает срез объявлений 
-# Обязательные параметры:
+# Возвращает срез объявлений используя курсор(начальный идентификатор объявления)
 # Опциональные параметры:
 # firstId - начальный идентификатор
 # tags - тэги по которым запрашиваются объявления
@@ -64,19 +66,18 @@ end
 # orderby - поле по которому нужно осуществить сортировку
 # limit - количество объявление вглубину, ограничено максимальным количеством объявлений в одном запросе
 # textLen - длина текста объявления в ответном сообщении
-get "/posts/getPosts" do |env|
-    begin        
+get "/posts/getPostsByCursor" do |env|
+    begin
         p env.params.query
         firstId = env.params.query["firstId"]?.try &.to_i64?
         limit = env.params.query["limit"]?.try &.to_i32?
-        tags = env.params.query["tags"]?.try &.split(',')        
-        orderby = env.params.query["orderby"]?.try &.split(',')        
+        tags = env.params.query["tags"]?.try &.split(',')
+        orderby = env.params.query["orderby"]?.try &.split(',')
         textLen = env.params.query["textLen"]?.try &.to_i32?
-                
-        p limit
-        res = Database.instance.postDao.getPosts(
+
+        res = Database.instance.postDao.getPostsByCursor(
             firstId, limit, tags, orderby, textLen)
-        next postsToResponse(res[0], res[1])
+        next postsToResponse(res, nil)
     rescue e
         p e
         next getCodeResponse(INTERNAL_ERROR)

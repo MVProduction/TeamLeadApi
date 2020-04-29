@@ -55,19 +55,75 @@ class PostDao < BaseDao
             WHERE post_id=?", id, as: DBPost)
     end    
 
-    # Возвращает массив объявлений с заданной фильтрацией и общее количество сообщений
+    # Возвращает объявления с заданной позиции и общее количество
+    # offset - сдвиг от начала
+    # limit - количество возвращаемых объявлений
+    # tags - тэги по которым нужно вернуть объявления
+    # textLen - количество символов в тексте объявления
+    # orderby - название поля по которому сортируется результат  
+    def getPostsByOffset(
+            offset : Int64? = nil,
+            limit : Int32? = nil,
+            tags : Array(String)? = nil,
+            orderby : Array(String)? = nil,
+            textLen : Int32? = nil
+        ) : Tuple(Array(DBPost)?, Int64)
+
+        postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
+
+        query = "
+            SELECT 
+                post_id,
+                post_title,
+                #{postText},
+                post_date,
+                user_id,
+                view_count,
+                comment_count,
+                last_comment_id 
+            FROM posts 
+        "
+        finalLimit = limit || DEFAULT_POST_LIMIT
+
+        conditions = "LIMIT #{finalLimit}"
+        if offset
+            conditions += ",#{offset}"
+        end
+
+        if orderby
+            order = orderby.join(',')
+            # TODO настройка восходящего и нисходящего
+            conditions += " ORDER BY #{order} DESC"
+        end
+
+        postQuery = query + conditions
+        p postQuery
+
+        rs = db.query(postQuery)
+        posts = DBPost.from_rs(rs)
+
+        # Считает полное количество сообщений
+        # TODO: оптимизация подсчёта количества
+        # count : Int64? 
+        cquery = "SELECT count(post_id) FROM posts"
+        count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
+
+        return { posts, count }
+    end
+
+    # Возвращает объявления с заданной фильтрацией используя курсор(начальный идентификатор объявления)
     # postId - идентификатор объявления с которого начинается поиск
     # limit - количество возвращаемых объявлений
     # tags - тэги по которым нужно вернуть объявления
     # textLen - количество символов в тексте объявления
     # orderby - название поля по которому сортируется результат    
-    def getPosts(                        
+    def getPostsByCursor(
             postId : Int64? = nil,
             limit : Int32? = nil,
             tags : Array(String)? = nil,
             orderby : Array(String)? = nil,
             textLen : Int32? = nil            
-        ) : Tuple(Array(DBPost)?, Int64?)
+        ) : Array(DBPost)
         
         postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
 
@@ -106,15 +162,9 @@ class PostDao < BaseDao
         p postQuery
 
         rs = db.query(postQuery)
-        posts = DBPost.from_rs(rs)
-
-        # Считает полное количество сообщений
-        # TODO: оптимизация подсчёта количества
-        count : Int64? 
-        cquery = "SELECT count(post_id) FROM posts"
-        count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
+        posts = DBPost.from_rs(rs)        
         
-        return { posts, count }
+        return posts
     end
 
     # Возвращает объявления по строке поиска
