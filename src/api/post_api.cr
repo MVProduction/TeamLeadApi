@@ -28,14 +28,10 @@ end
 # Сериализует объявления в json и добавляет код ответа
 def postsToResponse(posts : Array(DBPost)?, total : Int64? = nil)
     if posts && posts.size > 0
-        dict = {
-            "code" => OK_CODE,
-            "posts" => posts.map { |x| postToDict(x) }
-        }
-        
-        dict["total"] = total if total
-
-        return dict.to_json
+        return {
+            code: OK_CODE,
+            posts: posts.map { |x| postToDict(x) }
+        }.to_json
     else
         return getCodeResponse(NO_DATA_ERROR)
     end    
@@ -53,6 +49,55 @@ get "/posts/getById/:id" do |env|
         next getCodeResponse(NO_DATA_ERROR) unless post
             
         next postToResponse(post)
+    rescue        
+        next getCodeResponse(INTERNAL_ERROR)
+    end
+end
+
+# Возвращает объявления постранично и общее количество страниц
+# Обязательные параметры
+# page - номер страницы
+# postsInPage - количество объявлений в странице
+# Опциональные параметры:
+# tags - тэги по которым запрашиваются объявления
+# orderby - поле по которому нужно осуществить сортировку
+# textLen - длина текста объявления в ответном сообщении
+get "/posts/getPostsByPage/:page/:postsInPage" do |env|
+    begin
+        page = env.params.url["page"]?.try &.to_i32?
+        postsInPage = env.params.url["postsInPage"]?.try &.to_i32?
+        
+        if page.nil? || page == 0
+            page = 1
+        end        
+
+        if postsInPage.nil?
+            next getCodeResponse(BAD_REQUEST_ERROR)
+        end
+        
+        tags = env.params.query["tags"]?.try &.split(',')
+        orderby = env.params.query["orderby"]?.try &.split(',')
+        textLen = env.params.query["textLen"]?.try &.to_i32?
+        
+        postCount = Database.instance.postDao.getPostsCount(tags)
+        pageCount = (postCount / postsInPage).to_i32
+
+        if page > pageCount
+            page = pageCount
+        end
+        
+        offset = ((page - 1) * postsInPage).to_i64
+        if offset < 0
+            offset = 0_i64
+        end
+
+        posts = Database.instance.postDao.getPostsByOffset(offset, postsInPage, tags, orderby, textLen)
+        
+        next {
+            code: OK_CODE,
+            posts: posts.map { |x| postToDict(x) },
+            pageCount: pageCount
+        }.to_json
     rescue        
         next getCodeResponse(INTERNAL_ERROR)
     end

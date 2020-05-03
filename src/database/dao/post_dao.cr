@@ -55,7 +55,25 @@ class PostDao < BaseDao
             WHERE post_id=?", id, as: DBPost)
     end    
 
-    # Возвращает объявления с заданной позиции и общее количество
+    # Возвращает количество объявлений по заданному фильтру
+    def getPostsCount(
+            tags : Array(String)? = nil            
+        ) : Int64
+
+        query = "
+            SELECT 
+                count(post_id)            
+            FROM posts 
+        "
+
+        # Считает полное количество сообщений
+        # TODO: оптимизация подсчёта количества
+        # count : Int64?        
+        count = db.scalar(query).as(Float64 | Int64 | String).to_i64
+        return count
+    end
+
+    # Возвращает объявления с заданной позиции
     # offset - сдвиг от начала
     # limit - количество возвращаемых объявлений
     # tags - тэги по которым нужно вернуть объявления
@@ -67,7 +85,7 @@ class PostDao < BaseDao
             tags : Array(String)? = nil,
             orderby : Array(String)? = nil,
             textLen : Int32? = nil
-        ) : Tuple(Array(DBPost)?, Int64)
+        ) : Array(DBPost)
 
         postText = textLen.nil? ? "post_text" : "substr(post_text, 1, #{textLen}) as post_text"
 
@@ -85,30 +103,29 @@ class PostDao < BaseDao
         "
         finalLimit = limit || DEFAULT_POST_LIMIT
 
-        conditions = "LIMIT #{finalLimit}"
-        if offset
-            conditions += ",#{offset}"
-        end
-
+        conditions = ""        
         if orderby
             order = orderby.join(',')
             # TODO настройка восходящего и нисходящего
             conditions += " ORDER BY #{order} DESC"
+        else
+            conditions += " ORDER BY post_id DESC"
         end
 
-        postQuery = query + conditions
+        if offset
+            conditions += " LIMIT #{offset},#{finalLimit}"
+        else
+            conditions += " LIMIT #{finalLimit}"
+        end
+
+        # TODO: убрать gsub
+        postQuery = (query + conditions).gsub("\n", "")
         p postQuery
 
         rs = db.query(postQuery)
-        posts = DBPost.from_rs(rs)
+        posts = DBPost.from_rs(rs)        
 
-        # Считает полное количество сообщений
-        # TODO: оптимизация подсчёта количества
-        # count : Int64? 
-        cquery = "SELECT count(post_id) FROM posts"
-        count = db.scalar(cquery).as(Float64 | Int64 | String).to_i64
-
-        return { posts, count }
+        return posts
     end
 
     # Возвращает объявления с заданной фильтрацией используя курсор(начальный идентификатор объявления)
