@@ -80,7 +80,7 @@ get "/posts/getPostsByPage/:page/:postsInPage" do |env|
         textLen = env.params.query["textLen"]?.try &.to_i32?
         
         postCount = Database.instance.postDao.getPostsCount(tags)
-        pageCount = (postCount / postsInPage).to_i32
+        pageCount = (postCount / postsInPage).ceil.to_i32
 
         if page > pageCount
             page = pageCount
